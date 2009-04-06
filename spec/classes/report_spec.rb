@@ -83,6 +83,7 @@ describe Kvlr::ReportsAsSparkline::Report do
         @one_month_ago    = Date.new(DateTime.now.year, DateTime.now.month, 1) - 1.month
         @two_months_ago   = Date.new(DateTime.now.year, DateTime.now.month, 1) - 2.months
         @three_months_ago = Date.new(DateTime.now.year, DateTime.now.month, 1) - 3.months
+        @four_months_ago  = Date.new(DateTime.now.year, DateTime.now.month, 1) - 4.months
       end
 
       it "should return data for the last two months when there is no end date" do
@@ -92,6 +93,12 @@ describe Kvlr::ReportsAsSparkline::Report do
       it "should go back further into history on a second report run if the limit is higher" do
         @report2.run(:limit => 2)
         @report2.run(:limit => 3).should == [[@three_months_ago, 2.0], [@two_months_ago.to_time, 0.0], [@one_month_ago.to_time, 1.0]]
+      end
+
+      it "should return the correct data even when there is a gap in the cached data created by prior report runs" do
+        @report2.run(:limit => 1)
+        @report2.run(:limit => 1, :end_date => 3.months.ago)
+        @report2.run(:limit => 4).should == [[@four_months_ago.to_time, 0.0], [@three_months_ago, 2.0], [@two_months_ago, 0.0], [@one_month_ago.to_time, 1.0]]
       end
 
       it "should return data for two months prior to the end date" do
@@ -386,11 +393,11 @@ describe Kvlr::ReportsAsSparkline::Report do
     it 'should return conditions for date_column >= begin_at when no custom conditions and a begin_at are specified' do
       @report.send(:setup_conditions, @begin_at, nil).should == ['created_at >= ?', @begin_at]
     end
-    
+
     it 'should return conditions for date_column <= end_at when no custom conditions and a end_at are specified' do
       @report.send(:setup_conditions, nil, @end_at).should == ['created_at <= ?', @end_at]
     end
-    
+
     it 'should raise an argument error when neither begin_at or end_at are specified' do
       lambda {@report.send(:setup_conditions, nil, nil)}.should raise_error(ArgumentError)
     end
