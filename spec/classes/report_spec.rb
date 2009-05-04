@@ -112,6 +112,12 @@ describe Simplabs::ReportsAsSparkline::Report do
               @result.last[0].should == Simplabs::ReportsAsSparkline::ReportingPeriod.new(@grouping, @end_date).date_time
             end
 
+            it "should return the correct number of results on subsequent runs for an earlier end date" do
+              0.upto(10) do |i|
+                @report.run(:end_date => @end_date - i.send(grouping)).size.should == @report.options[:limit]
+              end
+            end
+
           end
 
         end
